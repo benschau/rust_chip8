@@ -1,5 +1,5 @@
-extern crate rust_chip8;
+mod cpu;
 
 fn main() {
-    println!("Hello, world!");
+    
 }
