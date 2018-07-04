@@ -2,20 +2,17 @@ use std::vec::Vec;
 use std::fs::File;
 use std::io::prelude::*;
 
-type BYTE = u8;
-type WORD = u16;
-
-struct cpu {
-    game_mem: [BYTE; 0xFFF],
-    regs: [BYTE; 16],
-    address_regs: WORD,
-    pc: WORD,
-    m_stack: Vec<WORD>,
+struct Cpu {
+    game_mem: [::BYTE; 0xFFF],
+    regs: [::BYTE; 16],
+    address_regs: ::WORD,
+    pc: ::WORD,
+    m_stack: Vec<::WORD>,
 }
 
-impl Default for cpu {
+impl Default for Cpu {
     fn default() -> Self {
-        cpu {
+        Cpu {
             game_mem: [0; 0xFFF],
             regs: [0; 16],
             address_regs: 0,
@@ -25,15 +22,15 @@ impl Default for cpu {
     }
 }
 
-impl cpu {
-    fn new(filepath: &str) -> cpu {
+impl Cpu {
+    fn new(filepath: &str) -> Cpu {
         let mut file = File::create(filepath).unwrap();
         let mut contents = String::new();
 
         file.read_to_string(&mut contents).unwrap();
-        let mem = cpu::init_mem(&contents.into_bytes());
+        let mem = Cpu::init_mem(&contents.into_bytes());
         
-        cpu {
+        Cpu {
             game_mem: mem,
             regs: [0; 16],
             address_regs: 0,
@@ -42,11 +39,10 @@ impl cpu {
         }
     } 
 
-    fn init_mem(bytes: &[BYTE]) -> [BYTE; 0xFFF] {
+    fn init_mem(bytes: &[::BYTE]) -> [::BYTE; 0xFFF] {
         let mut mem = [0; 0xFFF];
         let bytes = &bytes[..0xFFF];
         
-        # the rules of rust: you can either have 1) one or more references (&T) to a resource or 2) only one mutable reference.
         { 
             let (_left, right) = mem.split_at_mut(0x200);
             right.clone_from_slice(&bytes[..0xFFF]);
