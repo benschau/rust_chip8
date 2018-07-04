@@ -44,7 +44,14 @@ impl cpu {
 
     fn init_mem(bytes: &[BYTE]) -> [BYTE; 0xFFF] {
         let mut mem = [0; 0xFFF];
-
+        let bytes = &bytes[..0xFFF];
         
+        # the rules of rust: you can either have 1) one or more references (&T) to a resource or 2) only one mutable reference.
+        { 
+            let (_left, right) = mem.split_at_mut(0x200);
+            right.clone_from_slice(&bytes[..0xFFF]);
+        }
+
+        mem
     }
 }
