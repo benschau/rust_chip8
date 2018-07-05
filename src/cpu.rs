@@ -50,4 +50,17 @@ impl Cpu {
 
         mem
     }
+
+    fn get_optcode(&mut self) -> ::WORD {
+        let mut optcode = self.game_mem[self.pc as usize] as u16;
+        optcode <<= 8; 
+        optcode |= self.game_mem[(self.pc + 1) as usize] as u16;
+        self.pc += 2;
+        
+        optcode
+    }
+
+    fn decode_optcode(optcode: ::WORD) {
+
+    }
 }
