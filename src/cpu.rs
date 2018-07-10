@@ -2,6 +2,8 @@ use std::vec::Vec;
 use std::fs::File;
 use std::io::prelude::*;
 
+static mut SCREEN: [[::BYTE; 32]; 64] = [[0; 32]; 64];
+
 struct Cpu {
     game_mem: [::BYTE; 0xFFF],
     regs: [::BYTE; 16],
@@ -51,16 +53,90 @@ impl Cpu {
         mem
     }
 
-    fn get_optcode(&mut self) -> ::WORD {
-        let mut optcode = self.game_mem[self.pc as usize] as u16;
-        optcode <<= 8; 
-        optcode |= self.game_mem[(self.pc + 1) as usize] as u16;
+    fn get_opcode(&mut self) -> ::WORD {
+        let mut opcode = self.game_mem[self.pc as usize] as ::WORD;
+        opcode <<= 8; 
+        opcode |= self.game_mem[(self.pc + 1) as usize] as ::WORD;
         self.pc += 2;
         
-        optcode
+        opcode
     }
 
-    fn decode_optcode(optcode: ::WORD) {
+    fn decode_opcode(optcode: ::WORD) {
+    
+    }
+    
+    ///
+    /// 0NNN - call RCA 1802 program at address NNN
+    ///
+    fn opcode0NNN(&mut self, optcode: ::WORD) {
+        self.pc = optcode & 0x0FFF; 
+    }
+    
+    ///
+    /// 00E0 - clear screen
+    ///
+    fn opcode00E0(&mut self, _optcode: ::WORD) {
+        // SCREEN = [[0; 32]; 64];
+    }
+    
+    ///
+    /// 00EE - return from subroutine
+    ///
+    fn opcode00EE(&mut self, _optcode: ::WORD) {
+        self.pc = self.m_stack.pop().unwrap();
+    }
+    
+    ///
+    /// 1NNN - jump to adress NNN.
+    ///
+    fn opcode1NNN(&mut self, optcode: ::WORD) {
+        self.pc = optcode & 0x0FFF; 
+    }
 
+    ///
+    /// 2NNN - call subroutine at NNN.
+    ///
+    fn opcode2NNN(&mut self, optcode: ::WORD) {
+        self.m_stack.push(self.pc);
+        self.pc = optcode & 0x0FFF;
+    }
+
+    ///
+    /// 3XNN - skip next instruction if VX == NN.
+    ///
+    fn opcode3XNN(&mut self, optcode: ::WORD) {
+        let reg = self.regs[((optcode >> 8) & 0x0F) as usize] as ::BYTE;
+        let val = (optcode & 0x00FF) as ::BYTE;
+
+        if reg == val {
+            self.pc = self.pc + 1;
+        }
+    }
+
+    ///
+    /// 4XNN - skip next instruction if VX != NN
+    ///
+    fn opcode4XNN(&mut self, optcode: ::WORD) {
+        let reg = self.regs[((optcode >> 8) & 0x0F) as usize] as ::BYTE;
+        let val = (optcode & 0x00FF) as ::BYTE;
+
+        if reg != val {
+            self.pc = self.pc + 1; 
+        }
+    }
+
+    ///
+    /// 5XY0 - skip next instruction if VX == VY
+    ///
+    fn opcode5XY0(&mut self, optcode: ::WORD) {
+        let regX = self.regs[((optcode >> 8) & 0x0F) as usize] as ::BYTE;
+        let regY = self.regs[((optcode >> 4) & 0x0F) as usize] as ::BYTE;
+
+        if regX == regY {
+            self.pc = self.pc + 1;
+        }
     }
 }
+
+
