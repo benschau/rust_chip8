@@ -69,47 +69,47 @@ impl Cpu {
     ///
     /// 0NNN - call RCA 1802 program at address NNN
     ///
-    fn opcode0NNN(&mut self, optcode: ::WORD) {
-        self.pc = optcode & 0x0FFF; 
+    fn opcode_0nnn(&mut self, opcode: ::WORD) {
+        self.pc = opcode & 0x0FFF; 
     }
     
     ///
     /// 00E0 - clear screen
     ///
-    fn opcode00E0(&mut self, _optcode: ::WORD) {
+    fn opcode_00e0(&mut self, _opcode: ::WORD) {
         // SCREEN = [[0; 32]; 64];
     }
     
     ///
     /// 00EE - return from subroutine
     ///
-    fn opcode00EE(&mut self, _optcode: ::WORD) {
+    fn opcode_00ee(&mut self, _opcode: ::WORD) {
         self.pc = self.m_stack.pop().unwrap();
     }
     
     ///
     /// 1NNN - jump to adress NNN.
     ///
-    fn opcode1NNN(&mut self, optcode: ::WORD) {
-        self.pc = optcode & 0x0FFF; 
+    fn opcode_1nnn(&mut self, opcode: ::WORD) {
+        self.pc = opcode & 0x0FFF; 
     }
 
     ///
     /// 2NNN - call subroutine at NNN.
     ///
-    fn opcode2NNN(&mut self, optcode: ::WORD) {
+    fn opcode_2nnn(&mut self, opcode: ::WORD) {
         self.m_stack.push(self.pc);
-        self.pc = optcode & 0x0FFF;
+        self.pc = opcode & 0x0FFF;
     }
 
     ///
     /// 3XNN - skip next instruction if VX == NN.
     ///
-    fn opcode3XNN(&mut self, optcode: ::WORD) {
-        let reg = self.regs[((optcode >> 8) & 0x0F) as usize] as ::BYTE;
-        let val = (optcode & 0x00FF) as ::BYTE;
+    fn opcode_3xnn(&mut self, opcode: ::WORD) {
+        let regx = self.regs[((opcode >> 8) & 0x0F) as usize] as ::BYTE;
+        let val = (opcode & 0x00FF) as ::BYTE;
 
-        if reg == val {
+        if regx == val {
             self.pc = self.pc + 1;
         }
     }
@@ -117,11 +117,11 @@ impl Cpu {
     ///
     /// 4XNN - skip next instruction if VX != NN
     ///
-    fn opcode4XNN(&mut self, optcode: ::WORD) {
-        let reg = self.regs[((optcode >> 8) & 0x0F) as usize] as ::BYTE;
-        let val = (optcode & 0x00FF) as ::BYTE;
+    fn opcode_4xnn(&mut self, opcode: ::WORD) {
+        let regx = self.regs[((opcode >> 8) & 0x0F) as usize] as ::BYTE;
+        let val = (opcode & 0x00FF) as ::BYTE;
 
-        if reg != val {
+        if regx != val {
             self.pc = self.pc + 1; 
         }
     }
@@ -129,13 +129,33 @@ impl Cpu {
     ///
     /// 5XY0 - skip next instruction if VX == VY
     ///
-    fn opcode5XY0(&mut self, optcode: ::WORD) {
-        let regX = self.regs[((optcode >> 8) & 0x0F) as usize] as ::BYTE;
-        let regY = self.regs[((optcode >> 4) & 0x0F) as usize] as ::BYTE;
+    fn opcode_5xy0(&mut self, opcode: ::WORD) {
+        let regx = self.regs[((opcode >> 8) & 0x0F) as usize] as ::BYTE;
+        let regy = self.regs[((opcode >> 4) & 0x0F) as usize] as ::BYTE;
 
-        if regX == regY {
+        if regx == regy {
             self.pc = self.pc + 1;
         }
+    }
+
+    ///
+    /// 6XNN - set VX to NN
+    ///
+    fn opcode_6xnn(&mut self, opcode: ::WORD) {
+        let regx_loc = ((opcode >> 8) & 0x0F) as usize;
+        let val = (opcode & 0x00FF) as ::BYTE;
+
+        self.regs[regx_loc] = val; 
+    }
+
+    ///
+    /// 7XNN - adds NN to VX
+    ///
+    fn opcode_7xnn(&mut self, opcode: ::WORD) {
+        let regx_loc = ((opcode >> 8) & 0x0F) as usize;
+        let val = (opcode & 0x00FF) as ::BYTE;
+        
+        self.regs[regx_loc] = self.regs[regx_loc] + val;
     }
 }
 
