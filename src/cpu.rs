@@ -157,6 +157,103 @@ impl Cpu {
         
         self.regs[regx_loc] = self.regs[regx_loc] + val;
     }
+    
+    // TODO: Compress 8xy series into one function
+    ///
+    /// 8XY0 - set VX to VY
+    ///
+    fn opcode_8xy0(&mut self, opcode: ::WORD) {
+        let regx_loc = ((opcode >> 8) & 0x0F) as usize;
+        let regy = self.regs[((opcode >> 4) & 0x00F) as usize];
+    
+        self.regs[regx_loc] = regy; 
+    }
+
+    ///
+    /// 8XY1 - set VX to VX | VY
+    ///
+    fn opcode_8xy1(&mut self, opcode: ::WORD) {
+        let regx_loc = ((opcode >> 8) & 0x0F) as usize;
+        let regy = self.regs[((opcode >> 4) & 0x00F) as usize];
+        
+        self.regs[regx_loc] = self.regs[regx_loc] | regy;
+    }
+
+    ///
+    /// 8xy2 - set VX to VX & VY
+    ///
+    fn opcode_8xy2(&mut self, opcode: ::WORD) {
+        let regx_loc = ((opcode >> 8) & 0x0F) as usize;
+        let regy = self.regs[((opcode >> 4) & 0x00F) as usize];
+        
+        self.regs[regx_loc] = self.regs[regx_loc] & regy;
+    }
+    
+    ///
+    /// 8xy3 - set VX to VX ^ VY
+    ///
+    fn opcode_8xy3(&mut self, opcode: ::WORD) {
+        let regx_loc = ((opcode >> 8) & 0x0F) as usize;
+        let regy = self.regs[((opcode >> 4) & 0x00F) as usize];
+        
+        self.regs[regx_loc] = self.regs[regx_loc] ^ regy;
+    }
+
+    ///
+    /// 8xy4 - add VY to Vx 
+    ///
+    fn opcode_8xy4(&mut self, opcode: ::WORD) {
+        let regx_loc = ((opcode >> 8) & 0x0F) as usize;
+        let regy = self.regs[((opcode >> 4) & 0x00F) as usize];
+        
+        self.regs[regx_loc] = self.regs[regx_loc] + regy; 
+    }
+
+    ///
+    /// 8xy5 - subtract VY from VX
+    ///
+    fn opcode_8xy5(&mut self, opcode: ::WORD) {
+        let regx_loc = ((opcode >> 8) & 0x0F) as usize;
+        let regy = self.regs[((opcode >> 4) & 0x00F) as usize];
+        
+        self.regs[regx_loc] = self.regs[regx_loc] - regy; 
+    }
+
+    ///
+    /// 8xy6 - shift VY << 1, store to VX. Set VF to value of least significant bit of VY prior to
+    /// shift.
+    ///
+    fn opcode_8xy6(&mut self, opcode: ::WORD) {
+        let regx_loc = ((opcode >> 8) & 0x0F) as usize;
+        let regy = self.regs[((opcode >> 4) & 0x00F) as usize];
+        
+        self.regs[15] = regy & 1;
+        self.regs[regx_loc] = regy << 1;
+    }
+
+    ///
+    /// 8xy7 - set VX to VY minux VX; VF set to 0 if borrow, 1 if not.
+    ///
+    fn opcode_8xy7(&mut self, opcode: ::WORD) {
+        let regx_loc = ((opcode >> 8) & 0x0F) as usize;
+        let regx = self.regs[regx_loc];
+        let regy = self.regs[((opcode >> 4) & 0x00F) as usize];
+
+        self.regs[15] = (regy != regx) as ::BYTE;
+        self.regs[regx_loc] = regy - regx;
+    }
+
+    ///
+    /// 8xye - shifts VY left by one, copies result to VX; VF set to value of most significant bit
+    /// of VY before shift.
+    ///
+    fn opcode_8xye(&mut self, opcode: ::WORD) {
+        let regx_loc = ((opcode >> 8) & 0x0F) as usize;
+        let regy = self.regs[((opcode >> 4) & 0x00F) as usize];
+        
+        self.regs[15] = regy & 2_u8.pow(15);
+        self.regs[regx_loc] = regy << 1;
+    }
 }
 
 
