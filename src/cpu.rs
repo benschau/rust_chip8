@@ -7,7 +7,7 @@ static mut SCREEN: [[::BYTE; 32]; 64] = [[0; 32]; 64];
 struct Cpu {
     game_mem: [::BYTE; 0xFFF],
     regs: [::BYTE; 16],
-    address_regs: ::WORD,
+    addr_reg: ::WORD,
     pc: ::WORD,
     m_stack: Vec<::WORD>,
 }
@@ -17,7 +17,7 @@ impl Default for Cpu {
         Cpu {
             game_mem: [0; 0xFFF],
             regs: [0; 16],
-            address_regs: 0,
+            addr_reg: 0,
             pc: 0x200,
             m_stack: Vec::new(),
         }
@@ -35,7 +35,7 @@ impl Cpu {
         Cpu {
             game_mem: mem,
             regs: [0; 16],
-            address_regs: 0,
+            addr_reg: 0,
             pc: 0x200,
             m_stack: Vec::new(),
         }
@@ -253,6 +253,27 @@ impl Cpu {
         
         self.regs[15] = regy & 2_u8.pow(15);
         self.regs[regx_loc] = regy << 1;
+    }
+
+    ///
+    /// 9xy0 - skips the next instr if VX != VY
+    ///
+    fn opcode_9xy0(&mut self, opcode: ::WORD) {
+        let regx_loc = ((opcode >> 8) & 0x0F) as usize;
+        let regx = self.regs[regx_loc];
+        let regy = self.regs[((opcode >> 4) & 0x00F) as usize];
+        
+        if regx != regy {
+            self.pc = self.pc + 1;
+        }
+    }
+
+    ///
+    /// annn - sets I (address reg) to the address NNN
+    ///
+    fn opcode_annn(&mut self, opcode: ::WORD) {
+        let addr = opcode & 0x0FFF;
+        self.addr_reg = addr;
     }
 }
 
