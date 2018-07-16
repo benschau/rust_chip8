@@ -1,8 +1,12 @@
+extern crate rand;
+
 use std::vec::Vec;
 use std::fs::File;
 use std::io::prelude::*;
+use cpu::rand::prelude::*;
 
 static mut SCREEN: [[::BYTE; 32]; 64] = [[0; 32]; 64];
+static mut KEYBOARD: [::BYTE; 16] = [0; 16];
 
 struct Cpu {
     game_mem: [::BYTE; 0xFFF],
@@ -110,7 +114,7 @@ impl Cpu {
         let val = (opcode & 0x00FF) as ::BYTE;
 
         if regx == val {
-            self.pc = self.pc + 1;
+            self.pc += 1;
         }
     }
 
@@ -122,7 +126,7 @@ impl Cpu {
         let val = (opcode & 0x00FF) as ::BYTE;
 
         if regx != val {
-            self.pc = self.pc + 1; 
+            self.pc += 1; 
         }
     }
 
@@ -134,7 +138,7 @@ impl Cpu {
         let regy = self.regs[((opcode >> 4) & 0x0F) as usize] as ::BYTE;
 
         if regx == regy {
-            self.pc = self.pc + 1;
+            self.pc += 1;
         }
     }
 
@@ -214,9 +218,11 @@ impl Cpu {
     ///
     fn opcode_8xy5(&mut self, opcode: ::WORD) {
         let regx_loc = ((opcode >> 8) & 0x0F) as usize;
+        let regx = self.regs[regx_loc];
         let regy = self.regs[((opcode >> 4) & 0x00F) as usize];
-        
-        self.regs[regx_loc] = self.regs[regx_loc] - regy; 
+       
+        self.regs[0xF] = (regy > regx) as ::BYTE; 
+        self.regs[regx_loc] = regx - regy; 
     }
 
     ///
@@ -227,7 +233,7 @@ impl Cpu {
         let regx_loc = ((opcode >> 8) & 0x0F) as usize;
         let regy = self.regs[((opcode >> 4) & 0x00F) as usize];
         
-        self.regs[15] = regy & 1;
+        self.regs[0xF] = regy & 1;
         self.regs[regx_loc] = regy << 1;
     }
 
@@ -239,7 +245,7 @@ impl Cpu {
         let regx = self.regs[regx_loc];
         let regy = self.regs[((opcode >> 4) & 0x00F) as usize];
 
-        self.regs[15] = (regy != regx) as ::BYTE;
+        self.regs[0xF] = (regy > regx) as ::BYTE;
         self.regs[regx_loc] = regy - regx;
     }
 
@@ -251,7 +257,7 @@ impl Cpu {
         let regx_loc = ((opcode >> 8) & 0x0F) as usize;
         let regy = self.regs[((opcode >> 4) & 0x00F) as usize];
         
-        self.regs[15] = regy & 2_u8.pow(15);
+        self.regs[0xF] = regy & 2_u8.pow(15);
         self.regs[regx_loc] = regy << 1;
     }
 
@@ -264,7 +270,7 @@ impl Cpu {
         let regy = self.regs[((opcode >> 4) & 0x00F) as usize];
         
         if regx != regy {
-            self.pc = self.pc + 1;
+            self.pc += 1;
         }
     }
 
@@ -275,6 +281,49 @@ impl Cpu {
         let addr = opcode & 0x0FFF;
         self.addr_reg = addr;
     }
+
+    ///
+    /// bnnn - jump to address NNN + V0
+    ///
+    fn opcode_bnnn(&mut self, opcode: ::WORD) {
+        let addr = opcode & 0x0FFF;
+        self.pc = (self.regs[0] as ::WORD) + addr;
+    }
+
+    ///
+    /// cxnn - set VX to the result of a bitwise and operation on a random number (0 - 255) and NN
+    ///
+    fn opcode_cxnn(&mut self, opcode: ::WORD) {
+        let val = (opcode & 0x00FF) as ::BYTE;
+        let regx_loc = ((opcode >> 8) & 0x0F) as usize;
+        let rng: u8 = thread_rng().gen();
+
+        self.regs[regx_loc] = rng & val;
+    }
+
+    ///
+    /// dxyn - draw a sprite at (VX, VY), width of 8 pixels and height of N pixels. each row of
+    /// eight pixels read as bit-coded starting from I (address reg). VF to 1 if any pixels set to
+    /// unset when sprite is drawn (e.g some pixel is overwritten), 0 if not.
+    ///
+    fn opcode_dxyn(&mut self, opcode: ::WORD) {
+        
+    }
+
+    ///
+    /// ex9e - skip next instruction if the key stored in VX is pressed.
+    ///
+    fn opcode_ex9e(&mut self, opcode: ::WORD) {
+        let key = self.regs[((opcode >> 8) & 0x0F) as usize] as usize;
+        
+        unsafe {
+            if KEYBOARD[key] == 0xF {
+                self.pc += 1; 
+            }
+        }
+    }
+
+
 }
 
 
