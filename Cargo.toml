@@ -4,3 +4,9 @@ version = "0.1.0"
 authors = ["Benson Chau <bchau3440@gmail.com>"]
 
 [dependencies]
+rand = "0.5"
+clap = { version = "~2.32", features = ["yaml"] }
+
+[dependencies.gtk]
+version = "0.4.1"
+features = ["v3_22"]
