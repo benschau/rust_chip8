@@ -5,8 +5,13 @@ use std::fs::File;
 use std::io::prelude::*;
 use cpu::rand::prelude::*;
 
+const DELAY_FREQ: ::BYTE = 60;
+const SOUND_FREQ: ::BYTE = 60;
+
 static mut SCREEN: [[::BYTE; 32]; 64] = [[0; 32]; 64];
-static mut KEYBOARD: [::BYTE; 16] = [0; 16];
+static mut KEYBOARD: [bool; 16] = [false; 16];
+static mut DELAY_TIMER: ::BYTE = DELAY_FREQ;
+static mut SOUND_TIMER: ::BYTE = SOUND_FREQ;
 
 struct Cpu {
     game_mem: [::BYTE; 0xFFF],
@@ -317,13 +322,44 @@ impl Cpu {
         let key = self.regs[((opcode >> 8) & 0x0F) as usize] as usize;
         
         unsafe {
-            if KEYBOARD[key] == 0xF {
+            if KEYBOARD[key] {
                 self.pc += 1; 
             }
         }
     }
 
+    ///
+    /// exa1 - skip next instruction if the key stored in VX isn't pressed.
+    ///
+    fn opcode_exa1(&mut self, opcode: ::WORD) {
+        let key = self.regs[((opcode >> 8) & 0x0F) as usize] as usize;
+        
+        unsafe {
+            if !KEYBOARD[key] {
+                self.pc += 1; 
+            }
+        }
+    }
 
+    ///
+    /// fx07 - sets VX to the value of the delay timer.
+    ///
+    fn opcode_fx07(&mut self, opcode: ::WORD) {
+        let regx_loc = ((opcode >> 8) & 0x0F) as usize;
+        
+        unsafe {
+            self.regs[regx_loc] = DELAY_TIMER;      
+        }
+    }
+
+    ///
+    /// fx0a - a key press is awaited, then store in VX.
+    ///        (blocks all other instructions until next key event)
+    ///
+    fn opcode_fx0a(&mut self, opcode: ::WORD) {
+        let regx_loc = ((opcode >> 8) & 0x0F) as usize;
+        
+    }
 }
 
 
