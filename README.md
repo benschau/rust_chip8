@@ -3,7 +3,6 @@
 ## Description:
 A CHIP8 emulator, written in Rust.
 Very much inspired by [codeslinger's](http://www.codeslinger.co.uk/pages/projects/chip8/) project. 
-In fact, parts of this is his code ported to Rust. 
 
 I'll be adding things that his code didn't have, e.g the missing gui programming and state saving.
 
