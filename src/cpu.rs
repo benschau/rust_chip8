@@ -17,7 +17,7 @@ static mut SOUND_TIMER: ::BYTE = SOUND_FREQ;
 struct Cpu {
     game_mem: [::BYTE; 0xFFF],
     regs: [::BYTE; 16],
-    addr_reg: ::WORD,
+    addr_reg: *mut ::BYTE,
     pc: ::WORD,
     m_stack: Vec<::WORD>,
 }
@@ -27,7 +27,7 @@ impl Default for Cpu {
         Cpu {
             game_mem: [0; 0xFFF],
             regs: [0; 16],
-            addr_reg: 0,
+            addr_reg: 0 as *mut ::BYTE,
             pc: 0x200,
             m_stack: Vec::new(),
         }
@@ -45,7 +45,7 @@ impl Cpu {
         Cpu {
             game_mem: mem,
             regs: [0; 16],
-            addr_reg: 0,
+            addr_reg: 0 as *mut ::BYTE,
             pc: 0x200,
             m_stack: Vec::new(),
         }
@@ -285,7 +285,7 @@ impl Cpu {
     ///
     fn opcode_annn(&mut self, opcode: ::WORD) {
         let addr = opcode & 0x0FFF;
-        self.addr_reg = addr;
+        self.addr_reg = addr as *mut ::BYTE;
     }
 
     ///
@@ -389,9 +389,9 @@ impl Cpu {
     /// fx1e - add VX to I (addr reg).
     ///
     fn opcode_fx1e(&mut self, opcode: ::WORD) {
-        let regx = self.regs[((opcode >> 8) & 0x0F) as usize] as u16;
+        let regx = self.regs[((opcode >> 8) & 0x0F) as usize] as isize;
             
-        self.addr_reg += regx;
+        self.addr_reg = unsafe { self.addr_reg.offset(regx) };
     }
 
     ///
@@ -402,7 +402,7 @@ impl Cpu {
     fn opcode_fx29(&mut self, opcode: ::WORD) {
         let regx = self.regs[((opcode >> 8) & 0x0F) as usize] as usize;
         
-        self.addr_reg = (FONT[regx] as *const ::BYTE) as ::WORD;
+        //self.addr_reg = FONT[regx] as *mut ::BYTE;
     }
 
     ///
@@ -410,10 +410,41 @@ impl Cpu {
     /// three digits at the address in I, the middle digit at I + 1, least significant at i + 2.
     ///
     fn opcode_fx33(&mut self, opcode: ::WORD) {
-        let regx = self.regs[((opcode >> 8) & 0x0F) as usize] as usize;
-        let addr = self.addr_reg;
+        let regx = self.regs[((opcode >> 8) & 0x0F) as usize];
         
+        unsafe {
+            *(self.addr_reg.offset(2)) = regx >> 5;
+            *(self.addr_reg.offset(1)) = (regx >> 4) & 3;
+            *(self.addr_reg) = regx & 3;
+        }
+    }
 
+    ///
+    /// fx55 - stores V0 to VX, inclusive, in memory starting from address @ I. The offset from I
+    /// is increased by 1 for each value written, but I itself is unmodified.
+    ///
+    fn opcode_fx55(&mut self, opcode: ::WORD) {
+        let regx = self.regs[((opcode >> 8) & 0x0F) as usize] as usize;
+        
+        for i in 0..regx {
+            unsafe {
+                *(self.addr_reg.offset(i as isize)) = self.regs[i]; 
+            }
+        }
+    }
+
+    ///
+    /// fx65 - fills V0 to VX, inclusive, with values from address @ I. Offset from I for each
+    /// value written, but I itself is unmodified.
+    ///
+    fn opcode_fx65(&mut self, opcode: ::WORD) {
+        let regx = self.regs[((opcode >> 8) & 0x0F) as usize] as usize;
+        
+        for i in 0..regx {
+            unsafe {
+                self.regs[i] = *(self.addr_reg.offset(i as isize));
+            }
+        }
     }
 }
 

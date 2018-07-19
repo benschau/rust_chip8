@@ -1,19 +1,22 @@
-pub const FONT: [&[::BYTE; 20]; 16] = [ &ZERO, 
-                                        &ONE,
-                                        &TWO,
-                                        &THREE,
-                                        &FOUR,
-                                        &FIVE,
-                                        &SIX,
-                                        &SEVEN,
-                                        &EIGHT,
-                                        &NINE,
-                                        &TEN,
-                                        &ELEV, 
-                                        &TWELV,
-                                        &THIRT,
-                                        &FOURT,
-                                        &FIFTE ];
+pub const FONT_WIDTH: ::BYTE = 4;
+pub const FONT_HEIGHT: ::BYTE = 5;
+
+pub const FONT: [&::BYTE; 16] = [ &ZERO[0], 
+                                  &ONE[0],
+                                  &TWO[0],
+                                  &THREE[0],
+                                  &FOUR[0],
+                                  &FIVE[0],
+                                  &SIX[0],
+                                  &SEVEN[0],
+                                  &EIGHT[0],
+                                  &NINE[0],
+                                  &TEN[0],
+                                  &ELEV[0], 
+                                  &TWELV[0],
+                                  &THIRT[0],
+                                  &FOURT[0],
+                                  &FIFTE[0] ];
 
 const ZERO: [::BYTE; 20]  = [ 1, 1, 1, 1,  
                               1, 0, 0, 1,
