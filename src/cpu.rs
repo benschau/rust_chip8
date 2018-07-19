@@ -4,6 +4,7 @@ use std::vec::Vec;
 use std::fs::File;
 use std::io::prelude::*;
 use cpu::rand::prelude::*;
+use font::FONT;
 
 const DELAY_FREQ: ::BYTE = 60;
 const SOUND_FREQ: ::BYTE = 60;
@@ -358,7 +359,61 @@ impl Cpu {
     ///
     fn opcode_fx0a(&mut self, opcode: ::WORD) {
         let regx_loc = ((opcode >> 8) & 0x0F) as usize;
+
+
+    }
+    
+    ///
+    /// fx15 - set delay timer to VX.
+    ///
+    fn opcode_fx15(&mut self, opcode: ::WORD) {
+        let regx = self.regs[((opcode >> 8) & 0x0F) as usize];
         
+        unsafe {
+            DELAY_TIMER = regx;
+        }
+    }
+
+    ///
+    /// fx18 - set sound timer to VX.
+    ///
+    fn opcode_fx18(&mut self, opcode: ::WORD) {
+        let regx = self.regs[((opcode >> 8) & 0x0F) as usize];
+        
+        unsafe {
+            SOUND_TIMER = regx;
+        }
+    }
+
+    ///
+    /// fx1e - add VX to I (addr reg).
+    ///
+    fn opcode_fx1e(&mut self, opcode: ::WORD) {
+        let regx = self.regs[((opcode >> 8) & 0x0F) as usize] as u16;
+            
+        self.addr_reg += regx;
+    }
+
+    ///
+    /// fx29 - sets I (addr reg) to the location of the sprite for the character (0-F) in VX
+    ///        (characters are represented as a 4x5 font)
+    ///        e.g I = sprite_addr[VX]
+    ///        
+    fn opcode_fx29(&mut self, opcode: ::WORD) {
+        let regx = self.regs[((opcode >> 8) & 0x0F) as usize] as usize;
+        
+        self.addr_reg = (FONT[regx] as *const ::BYTE) as ::WORD;
+    }
+
+    ///
+    /// fx33 - stores the binary-coded decimal representation of VX with the most significant of
+    /// three digits at the address in I, the middle digit at I + 1, least significant at i + 2.
+    ///
+    fn opcode_fx33(&mut self, opcode: ::WORD) {
+        let regx = self.regs[((opcode >> 8) & 0x0F) as usize] as usize;
+        let addr = self.addr_reg;
+        
+
     }
 }
 
