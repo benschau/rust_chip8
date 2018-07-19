@@ -426,7 +426,7 @@ impl Cpu {
     fn opcode_fx55(&mut self, opcode: ::WORD) {
         let regx = self.regs[((opcode >> 8) & 0x0F) as usize] as usize;
         
-        for i in 0..regx {
+        for i in 0..(regx + 1) {
             unsafe {
                 *(self.addr_reg.offset(i as isize)) = self.regs[i]; 
             }
@@ -440,7 +440,7 @@ impl Cpu {
     fn opcode_fx65(&mut self, opcode: ::WORD) {
         let regx = self.regs[((opcode >> 8) & 0x0F) as usize] as usize;
         
-        for i in 0..regx {
+        for i in 0..(regx + 1) {
             unsafe {
                 self.regs[i] = *(self.addr_reg.offset(i as isize));
             }
