@@ -40,7 +40,8 @@ impl Cpu {
         let mut contents = String::new();
 
         file.read_to_string(&mut contents).unwrap();
-        let mem = Cpu::init_mem(&contents.into_bytes());
+        let mut mem = Cpu::init_mem(&contents.into_bytes());
+        Cpu::init_font(&mut mem);
         
         Cpu {
             game_mem: mem,
@@ -67,7 +68,9 @@ impl Cpu {
     /// init_font - load chip8 fontset into the game_mem[0x50] onward.
     ///
     fn init_font(bytes: &mut [::BYTE]) {
-          
+        for i in 0..80 as usize {
+            bytes[i + 0x50] = FONT[i];
+        }
     }
 
     fn get_opcode(&mut self) -> ::WORD {
