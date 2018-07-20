@@ -62,6 +62,13 @@ impl Cpu {
 
         mem
     }
+   
+    ///
+    /// init_font - load chip8 fontset into the game_mem[0x50] onward.
+    ///
+    fn init_font(bytes: &mut [::BYTE]) {
+          
+    }
 
     fn get_opcode(&mut self) -> ::WORD {
         let mut opcode = self.game_mem[self.pc as usize] as ::WORD;
