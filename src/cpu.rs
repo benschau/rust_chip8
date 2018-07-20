@@ -17,7 +17,7 @@ static mut SOUND_TIMER: ::BYTE = SOUND_FREQ;
 struct Cpu {
     game_mem: [::BYTE; 0xFFF],
     regs: [::BYTE; 16],
-    addr_reg: *mut ::BYTE,
+    addr_reg: ::WORD,
     pc: ::WORD,
     m_stack: Vec<::WORD>,
 }
@@ -27,7 +27,7 @@ impl Default for Cpu {
         Cpu {
             game_mem: [0; 0xFFF],
             regs: [0; 16],
-            addr_reg: 0 as *mut ::BYTE,
+            addr_reg: 0,
             pc: 0x200,
             m_stack: Vec::new(),
         }
@@ -45,7 +45,7 @@ impl Cpu {
         Cpu {
             game_mem: mem,
             regs: [0; 16],
-            addr_reg: 0 as *mut ::BYTE,
+            addr_reg: 0,
             pc: 0x200,
             m_stack: Vec::new(),
         }
@@ -285,7 +285,7 @@ impl Cpu {
     ///
     fn opcode_annn(&mut self, opcode: ::WORD) {
         let addr = opcode & 0x0FFF;
-        self.addr_reg = addr as *mut ::BYTE;
+        self.addr_reg = addr;
     }
 
     ///
@@ -313,7 +313,12 @@ impl Cpu {
     /// unset when sprite is drawn (e.g some pixel is overwritten), 0 if not.
     ///
     fn opcode_dxyn(&mut self, opcode: ::WORD) {
-        
+        // TODO: FILL OUT 
+        let regx = self.regs[((opcode >> 8) & 0x0F) as usize];
+        let regy = self.regs[((opcode >> 4) & 0x00F) as usize];
+        let coord = (regx, regy);
+
+
     }
 
     ///
@@ -360,7 +365,7 @@ impl Cpu {
     fn opcode_fx0a(&mut self, opcode: ::WORD) {
         let regx_loc = ((opcode >> 8) & 0x0F) as usize;
 
-
+        // TODO: FILL OUT
     }
     
     ///
@@ -389,9 +394,9 @@ impl Cpu {
     /// fx1e - add VX to I (addr reg).
     ///
     fn opcode_fx1e(&mut self, opcode: ::WORD) {
-        let regx = self.regs[((opcode >> 8) & 0x0F) as usize] as isize;
+        let regx = self.regs[((opcode >> 8) & 0x0F) as usize] as ::WORD;
             
-        self.addr_reg = unsafe { self.addr_reg.offset(regx) };
+        self.addr_reg += regx;
     }
 
     ///
@@ -402,6 +407,7 @@ impl Cpu {
     fn opcode_fx29(&mut self, opcode: ::WORD) {
         let regx = self.regs[((opcode >> 8) & 0x0F) as usize] as usize;
         
+        // TODO: CORRECT PTRS
         //self.addr_reg = FONT[regx] as *mut ::BYTE;
     }
 
@@ -412,11 +418,9 @@ impl Cpu {
     fn opcode_fx33(&mut self, opcode: ::WORD) {
         let regx = self.regs[((opcode >> 8) & 0x0F) as usize];
         
-        unsafe {
-            *(self.addr_reg.offset(2)) = regx >> 5;
-            *(self.addr_reg.offset(1)) = (regx >> 4) & 3;
-            *(self.addr_reg) = regx & 3;
-        }
+        self.game_mem[(self.addr_reg as usize) + 2] = regx >> 5;
+        self.game_mem[(self.addr_reg as usize) + 1] = (regx >> 4) & 3;
+        self.game_mem[self.addr_reg as usize] = regx & 3;
     }
 
     ///
@@ -426,10 +430,8 @@ impl Cpu {
     fn opcode_fx55(&mut self, opcode: ::WORD) {
         let regx = self.regs[((opcode >> 8) & 0x0F) as usize] as usize;
         
-        for i in 0..(regx + 1) {
-            unsafe {
-                *(self.addr_reg.offset(i as isize)) = self.regs[i]; 
-            }
+        for i in 0..(regx + 1) as usize {
+            self.game_mem[(self.addr_reg as usize) + i] = self.regs[i]; 
         }
     }
 
@@ -440,10 +442,8 @@ impl Cpu {
     fn opcode_fx65(&mut self, opcode: ::WORD) {
         let regx = self.regs[((opcode >> 8) & 0x0F) as usize] as usize;
         
-        for i in 0..(regx + 1) {
-            unsafe {
-                self.regs[i] = *(self.addr_reg.offset(i as isize));
-            }
+        for i in 0..(regx + 1) as usize {
+                self.regs[i] = self.game_mem[(self.addr_reg as usize) + i];
         }
     }
 }
