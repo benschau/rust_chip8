@@ -415,10 +415,9 @@ impl Cpu {
     ///        e.g I = sprite_addr[VX]
     ///        
     fn opcode_fx29(&mut self, opcode: ::WORD) {
-        let regx = self.regs[((opcode >> 8) & 0x0F) as usize] as usize;
+        let regx = self.regs[((opcode >> 8) & 0x0F) as usize];
         
-        // TODO: CORRECT PTRS
-        //self.addr_reg = FONT[regx] as *mut ::BYTE;
+        self.addr_reg = (0x50 + (regx * 5)).into();
     }
 
     ///
