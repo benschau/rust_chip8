@@ -81,9 +81,36 @@ impl Cpu {
         
         opcode
     }
-
-    fn decode_opcode(optcode: ::WORD) {
     
+    ///
+    ///     decode_opcode - decode the given opcode using the following structure:
+    ///
+    ///     This structure should already have been created prior to the calling of this function.
+    ///     The first array of pointers is points either to another array (if there are more
+    ///     possibilities) or to the actual function that the opcode represents. We traverse this
+    ///     structure to the bottom, like a tree, and the leaf is the interpreted CPU opcode that is run. 
+    ///     Each subarray of pointers is representative of the next bit needed to be interpreted,
+    ///     or the next distinctive bit- e.g for the opcodes that begin with 8, we can skip the
+    ///     next two bits XY and we base the final opcode on the last bit (that we use to
+    ///     differentiate against the other opcodes that begin with 8).
+    ///
+    ///     [ 0, 1NNN, 2NNN, 3XNN, 4XNN, 5XY0, 6XNN, 7XNN, 8, 9XY0, ANNN, BNNN, CXNN, DXYN, ...
+    ///       |                                            |                                
+    ///      / \                                    [8XY0, 8XY1, ...]                   
+    ///   [ E , 0NNN ]
+    ///     |   
+    ///     |   
+    ///     |__
+    ///    /    \
+    ///  [00E0, 00EE]
+    ///
+    ///     [ E,                F ]
+    ///       |                 | 
+    ///     [EX(9E), EX(A1)]   [FX(07), FX(0A), FX(15), FX(18), FX(1E), FX(29), FX(33), FX(55),
+    ///                         FX(65)]
+    ///
+    fn decode_opcode(optcode: ::WORD) {
+          
     }
     
     ///
@@ -376,6 +403,7 @@ impl Cpu {
         let regx_loc = ((opcode >> 8) & 0x0F) as usize;
 
         // TODO: FILL OUT
+         
     }
     
     ///
