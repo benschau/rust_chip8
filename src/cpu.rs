@@ -92,7 +92,9 @@ impl Cpu {
     ///                         FX(65)]
     ///
     fn init_decoder() -> [::BYTE; 16] {
-         
+        let arr: [::BYTE; 16] = [0; 16];
+
+        arr
     }
    
     ///
@@ -369,20 +371,22 @@ impl Cpu {
         
         self.regs[0xF] = 0;
         
-        for line in 0..height {
-            let data: ::BYTE = self.game_mem[(self.addr_reg + line) as usize];
-            let xpixel_bit = 7;
-            let xpixel = 0;
-            for xpixel in 0..8 {
-                let mask = 1 << xpixel_bit;
-                if (data & mask) == 1 {
-                    let x: usize = (coord.0 + xpixel) as usize;
-                    let y: usize = (coord.1 + line as ::BYTE) as usize;
-                    if SCREEN[x][y] == 1 {
-                        self.regs[0xF] = 1; 
-                    }
+        unsafe {
+            for line in 0..height {
+                let data: ::BYTE = self.game_mem[(self.addr_reg + line) as usize];
+                let xpixel_bit = 7;
+                let xpixel = 0;
+                for xpixel in 0..8 {
+                    let mask = 1 << xpixel_bit;
+                    if (data & mask) == 1 {
+                        let x: usize = (coord.0 + xpixel) as usize;
+                        let y: usize = (coord.1 + line as ::BYTE) as usize;
+                        if SCREEN[x][y] == 1 {
+                            self.regs[0xF] = 1; 
+                        }
 
-                    SCREEN[x][y] ^= 1;
+                        SCREEN[x][y] ^= 1;
+                    }
                 }
             }
         }
