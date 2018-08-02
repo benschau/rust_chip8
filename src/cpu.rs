@@ -63,36 +63,18 @@ impl Cpu {
 
         mem
     }
-   
-    ///
-    /// init_font - load chip8 fontset into the game_mem[0x50] onward.
-    ///
-    fn init_font(bytes: &mut [::BYTE]) {
-        for i in 0..80 as usize {
-            bytes[i + 0x50] = FONT[i];
-        }
-    }
-
-    fn get_opcode(&mut self) -> ::WORD {
-        let mut opcode = self.game_mem[self.pc as usize] as ::WORD;
-        opcode <<= 8; 
-        opcode |= self.game_mem[(self.pc + 1) as usize] as ::WORD;
-        self.pc += 2;
-        
-        opcode
-    }
     
     ///
-    ///     decode_opcode - decode the given opcode using the following structure:
-    ///
-    ///     This structure should already have been created prior to the calling of this function.
-    ///     The first array of pointers is points either to another array (if there are more
-    ///     possibilities) or to the actual function that the opcode represents. We traverse this
-    ///     structure to the bottom, like a tree, and the leaf is the interpreted CPU opcode that is run. 
-    ///     Each subarray of pointers is representative of the next bit needed to be interpreted,
-    ///     or the next distinctive bit- e.g for the opcodes that begin with 8, we can skip the
-    ///     next two bits XY and we base the final opcode on the last bit (that we use to
-    ///     differentiate against the other opcodes that begin with 8).
+    /// init_decoder - Creates the following structure for later opcode decomp:
+    /// 
+    /// The first array of pointers is points either to another array (if there are more
+    /// possibilities) or to the actual function that the opcode represents. We traverse this
+    /// structure to the bottom, like a tree, and the leaf is the interpreted CPU opcode that is run. 
+    /// 
+    /// Each subarray of pointers is representative of the next bit needed to be interpreted,
+    /// or the next distinctive bit- e.g for the opcodes that begin with 8, we can skip the
+    /// next two bits XY and we base the final opcode on the last bit (that we use to
+    /// differentiate against the other opcodes that begin with 8).
     ///
     ///     [ 0, 1NNN, 2NNN, 3XNN, 4XNN, 5XY0, 6XNN, 7XNN, 8, 9XY0, ANNN, BNNN, CXNN, DXYN, ...
     ///       |                                            |                                
@@ -109,8 +91,38 @@ impl Cpu {
     ///     [EX(9E), EX(A1)]   [FX(07), FX(0A), FX(15), FX(18), FX(1E), FX(29), FX(33), FX(55),
     ///                         FX(65)]
     ///
+    fn init_decoder() -> [::BYTE; 16] {
+         
+    }
+   
+    ///
+    /// init_font - load chip8 fontset into the game_mem[0x50] onward.
+    ///
+    fn init_font(bytes: &mut [::BYTE]) {
+        for i in 0..80 as usize {
+            bytes[i + 0x50] = FONT[i];
+        }
+    }
+    
+    ///
+    /// get_opcode - fetch the opcode that the pc is looking at.
+    ///
+    fn get_opcode(&mut self) -> ::WORD {
+        let mut opcode = self.game_mem[self.pc as usize] as ::WORD;
+        opcode <<= 8; 
+        opcode |= self.game_mem[(self.pc + 1) as usize] as ::WORD;
+        self.pc += 2;
+        
+        opcode
+    }
+    
+    ///
+    /// decode_opcode - decode the given opcode using the following structure:
+    ///
+    /// This structure should already have been created prior to the calling of this function.
+    ///
     fn decode_opcode(optcode: ::WORD) {
-          
+              
     }
     
     ///
@@ -350,12 +362,30 @@ impl Cpu {
     /// unset when sprite is drawn (e.g some pixel is overwritten), 0 if not.
     ///
     fn opcode_dxyn(&mut self, opcode: ::WORD) {
-        // TODO: FILL OUT 
         let regx = self.regs[((opcode >> 8) & 0x0F) as usize];
         let regy = self.regs[((opcode >> 4) & 0x00F) as usize];
         let coord = (regx, regy);
+        let height = opcode & 0x000F;
+        
+        self.regs[0xF] = 0;
+        
+        for line in 0..height {
+            let data: ::BYTE = self.game_mem[(self.addr_reg + line) as usize];
+            let xpixel_bit = 7;
+            let xpixel = 0;
+            for xpixel in 0..8 {
+                let mask = 1 << xpixel_bit;
+                if (data & mask) == 1 {
+                    let x: usize = (coord.0 + xpixel) as usize;
+                    let y: usize = (coord.1 + line as ::BYTE) as usize;
+                    if SCREEN[x][y] == 1 {
+                        self.regs[0xF] = 1; 
+                    }
 
-
+                    SCREEN[x][y] ^= 1;
+                }
+            }
+        }
     }
 
     ///
