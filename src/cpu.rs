@@ -8,11 +8,42 @@ use font::FONT;
 
 const DELAY_FREQ: ::BYTE = 60;
 const SOUND_FREQ: ::BYTE = 60;
-
 static mut SCREEN: [[::BYTE; 32]; 64] = [[0; 32]; 64];
 static mut KEYBOARD: [bool; 16] = [false; 16];
 static mut DELAY_TIMER: ::BYTE = DELAY_FREQ;
 static mut SOUND_TIMER: ::BYTE = SOUND_FREQ;
+
+struct OpcodeByte<'a> {
+    curr_opcode: ::WORD,
+    func: Option<&'a FnMut(&mut Cpu, ::WORD)>,
+    suffix_bits: Vec<&'a OpcodeByte<'a>>
+}
+
+impl<'a> OpcodeByte<'a> {
+
+    ///
+    /// new - create a new opcode bit structure.
+    ///
+    /// The opcode byte structure is meant to keep track of the current decoded opcode. 
+    /// We split the opcode down at the index given, such that given the word and index: 
+    ///     0xDXYN, 1
+    /// is split so that curr_opcode = D, and the suffix_bits are set to the possible bits for the
+    /// next opcode, e.g X, or nothing if the only choice is DXYN (which it is). Since DXYN is the
+    /// leaf in our tree, we point func toward Cpu::opcode_dxyn() for the decoder tree.
+    ///     0xDXYN, 2 => curr_opcode = DX, suffix_bits = 
+    ///
+    fn new(opcode: ::WORD, 
+           index: ::BYTE, 
+           cpu_fp: Option<&'a FnMut(&mut Cpu, ::WORD)>) -> OpcodeByte<'a> {
+        
+        // TODO: Shift curr_opcode and suffix bits to create vector of opcode bytes and root
+        OpcodeByte {
+            curr_opcode: opcode,
+            func: cpu_fp,
+            suffix_bits: Vec::new(),
+        }
+    }
+}
 
 struct Cpu {
     game_mem: [::BYTE; 0xFFF],
