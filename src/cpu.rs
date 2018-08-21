@@ -35,12 +35,22 @@ impl<'a> OpcodeByte<'a> {
     fn new(opcode: ::WORD, 
            index: ::BYTE, 
            cpu_fp: Option<&'a FnMut(&mut Cpu, ::WORD)>) -> OpcodeByte<'a> {
+       
+        curr = (opcode >> ((4 - index) * 4);
+        suffix = opcode & 256;
         
         // TODO: Shift curr_opcode and suffix bits to create vector of opcode bytes and root
+        // need unit test, just a guess 
+        let bits: Vec<&'a OpcodeByte<'a>> = Vec::new();
+        while suffix != 0 {
+            let child = OpcodeByte::new(curr, index + 1);
+            suffix << 4;
+        }
+
         OpcodeByte {
-            curr_opcode: opcode,
+            curr_opcode: curr,
             func: cpu_fp,
-            suffix_bits: Vec::new(),
+            suffix_bits: bits;
         }
     }
 }
