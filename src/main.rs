@@ -25,10 +25,27 @@ const WHITE: [f32; 4] = [256.0, 256.0, 256.0, 1.0];
 type BYTE = u8;
 type WORD = u16;
 
+gfx_defines!{ 
+    vertex Vertex {
+        pos: [f32; 4] = "a Pos",
+        color: [f32; 3] = "a_Color",
+    }
+
+    constant Transform {
+        transform: [[f32; 4]; 4] = "u_Transform",
+    }
+
+    pipeline pipe {
+        vbuf: gfx::VertexBuffer<Vertex> = {},
+        transform: gfx::ConstantBuffer<Transform> = "Transform",
+        out: gfx::RenderTarget<ColorFormat> = "Target0",
+    }
+}
+
 fn main() {
     let yaml = load_yaml!("../res/config.yml");
     let _matches = App::from_yaml(yaml).get_matches();
-
+    
     let mut events_loop = glutin::EventsLoop::new();
     let windowbuilder = glutin::WindowBuilder::new()
         .with_title("rust_chip8".to_string())
@@ -41,6 +58,10 @@ fn main() {
         .with_vsync(true);
     let (window, mut device, mut factory, color_view, mut depth_view) =
         gfx_glutin::init::<ColorFormat, DepthFormat>(windowbuilder, contextbuilder, &events_loop);
+    let pso = factory.create_pipeline_simple(
+        include_bytes!("../res/shaders/shader_150.glslf"),
+        include_bytes!("../res/shaders/shader_150.glslv"),
+        pipe::new()).unwrap();
 
     let mut running = true;
     while running {
