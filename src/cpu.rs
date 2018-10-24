@@ -16,7 +16,7 @@ static mut SOUND_TIMER: ::BYTE = SOUND_FREQ;
 struct OpcodeByte<'a> {
     curr_opcode: ::WORD,
     func: Option<&'a FnMut(&mut Cpu, ::WORD)>,
-    suffix_bits: Vec<&'a OpcodeByte<'a>>
+    suffix_bits: Vec<OpcodeByte<'a>>
 }
 
 impl<'a> OpcodeByte<'a> {
@@ -41,9 +41,9 @@ impl<'a> OpcodeByte<'a> {
         
         // TODO: Shift curr_opcode and suffix bits to create vector of opcode bytes and root
         // need unit test, just a guess 
-        let bits: Vec<&'a OpcodeByte<'a>> = Vec::new();
+        let mut bits: Vec<OpcodeByte> = Vec::new();
         while suffix != 0 {
-            let child = OpcodeByte::new(curr, index + 1, cpu_fp);
+            bits.push(OpcodeByte::new(curr, index + 1, cpu_fp));
             suffix << 4;
         }
 
