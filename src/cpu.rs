@@ -36,21 +36,21 @@ impl<'a> OpcodeByte<'a> {
            index: ::BYTE, 
            cpu_fp: Option<&'a FnMut(&mut Cpu, ::WORD)>) -> OpcodeByte<'a> {
        
-        curr = (opcode >> ((4 - index) * 4);
-        suffix = opcode & 256;
+        let curr = opcode >> ((4 - index) * 4);
+        let suffix = opcode & 256;
         
         // TODO: Shift curr_opcode and suffix bits to create vector of opcode bytes and root
         // need unit test, just a guess 
         let bits: Vec<&'a OpcodeByte<'a>> = Vec::new();
         while suffix != 0 {
-            let child = OpcodeByte::new(curr, index + 1);
+            let child = OpcodeByte::new(curr, index + 1, cpu_fp);
             suffix << 4;
         }
 
         OpcodeByte {
             curr_opcode: curr,
             func: cpu_fp,
-            suffix_bits: bits;
+            suffix_bits: bits
         }
     }
 }
@@ -134,7 +134,7 @@ impl Cpu {
     ///
     fn init_decoder() -> [::BYTE; 16] {
         let arr: [::BYTE; 16] = [0; 16];
-
+        
         arr
     }
    
