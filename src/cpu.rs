@@ -14,6 +14,49 @@ static mut KEYBOARD: [bool; 16] = [false; 16];
 static mut DELAY_TIMER: ::BYTE = DELAY_FREQ;
 static mut SOUND_TIMER: ::BYTE = SOUND_FREQ;
 
+/* 
+struct OpcodeByte<'a> {
+    curr_opcode: ::WORD,
+    func: Option<&'a FnMut(&mut Cpu, ::WORD)>,
+    suffix_bits: Vec<OpcodeByte<'a>>
+}
+
+impl<'a> OpcodeByte<'a> {
+
+    ///
+    /// new - create a new opcode bit structure.
+    ///
+    /// The opcode byte structure is meant to keep track of the current decoded opcode. 
+    /// We split the opcode down at the index given, such that given the word and index: 
+    ///     0xDXYN, 1
+    /// is split so that curr_opcode = D, and the suffix_bits are set to the possible bits for the
+    /// next opcode, e.g X, or nothing if the only choice is DXYN (which it is). Since DXYN is the
+    /// leaf in our tree, we point func toward Cpu::opcode_dxyn() for the decoder tree.
+    ///     0xDXYN, 2 => curr_opcode = DX, suffix_bits = 
+    ///
+    fn new(opcode: ::WORD, 
+           index: ::BYTE, 
+           cpu_fp: Option<&'a FnMut(&mut Cpu, ::WORD)>) -> OpcodeByte<'a> {
+       
+        let curr = opcode >> ((4 - index) * 4);
+        let suffix = opcode & 256;
+        
+        // TODO: Shift curr_opcode and suffix bits to create vector of opcode bytes and root
+        // need unit test, just a guess 
+        let mut bits: Vec<OpcodeByte> = Vec::new();
+        while suffix != 0 {
+            bits.push(OpcodeByte::new(curr, index + 1, cpu_fp));
+            suffix << 4;
+        }
+
+        OpcodeByte {
+            curr_opcode: curr,
+            func: cpu_fp,
+            suffix_bits: bits
+        }
+    }
+} */
+
 struct Cpu {
     game_mem: [::BYTE; 0xFFF],
     regs: [::BYTE; 16],
@@ -50,8 +93,8 @@ impl Cpu {
             pc: 0x200,
             m_stack: Vec::new(),
         }
-    } 
-
+    }
+    
     fn init_mem(bytes: &[::BYTE]) -> [::BYTE; 0xFFF] {
         let mut mem = [0; 0xFFF];
         let bytes = &bytes[..0xFFF];
@@ -64,6 +107,7 @@ impl Cpu {
         mem
     }
     
+    /*
     ///
     /// init_decoder - Creates the following structure for later opcode decomp:
     /// 
@@ -95,7 +139,8 @@ impl Cpu {
         let arr: [::BYTE; 16] = [0; 16];
 
         arr
-    }
+    } 
+    */
    
     ///
     /// init_font - load chip8 fontset into the game_mem[0x50] onward.
@@ -104,6 +149,17 @@ impl Cpu {
         for i in 0..80 as usize {
             bytes[i + 0x50] = FONT[i];
         }
+    }
+    
+    ///
+    /// run - Read the contents of game memory, run and decode opcode instructions.
+    ///
+    fn run(&mut self) {
+
+        while true {
+
+        }
+
     }
     
     ///
@@ -118,6 +174,7 @@ impl Cpu {
         opcode
     }
     
+    /*
     ///
     /// decode_opcode - decode the given opcode using the following structure:
     ///
@@ -126,6 +183,7 @@ impl Cpu {
     fn decode_opcode(optcode: ::WORD) {
               
     }
+    */
     
     ///
     /// 0NNN - call RCA 1802 program at address NNN
