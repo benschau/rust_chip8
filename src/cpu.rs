@@ -1,15 +1,24 @@
 extern crate rand;
+extern crate piston_window;
 
 use std::vec::Vec;
+use std::fs::metadata;
 use std::fs::File;
 use std::io::prelude::*;
 use cpu::rand::prelude::*;
 use font::FONT;
+use self::piston_window::*;
 
 const DELAY_FREQ: ::BYTE = 60;
 const SOUND_FREQ: ::BYTE = 60;
+// screen_scaling here means that every 'pixel' is screen_scaling x screen_scaling size.
+const SCREEN_SCALING: u32 = 10;
+const SCREEN_DIM: (u32, u32) = (32 * SCREEN_SCALING, 64 * SCREEN_SCALING);
 
-static mut SCREEN: [[::BYTE; 32]; 64] = [[0; 32]; 64];
+// our screen frame buffer
+static mut SCREEN: [[::BYTE; SCREEN_DIM.0 as usize]; SCREEN_DIM.1 as usize] = 
+                   [[0; SCREEN_DIM.0 as usize]; SCREEN_DIM.1 as usize];
+
 static mut KEYBOARD: [bool; 16] = [false; 16];
 static mut DELAY_TIMER: ::BYTE = DELAY_FREQ;
 static mut SOUND_TIMER: ::BYTE = SOUND_FREQ;
@@ -57,7 +66,7 @@ impl<'a> OpcodeByte<'a> {
     }
 } */
 
-struct Cpu {
+pub struct Cpu {
     game_mem: [::BYTE; 0xFFF],
     regs: [::BYTE; 16],
     addr_reg: ::WORD,
@@ -78,12 +87,16 @@ impl Default for Cpu {
 }
 
 impl Cpu {
-    fn new(filepath: &str) -> Cpu {
-        let mut file = File::create(filepath).unwrap();
-        let mut contents = String::new();
+    pub fn new(filepath: &str) -> Cpu {
+        // TODO: add exception handling on this file 
+        let metadata = metadata(filepath).unwrap();
+        assert!(metadata.is_file());
 
-        file.read_to_string(&mut contents).unwrap();
-        let mut mem = Cpu::init_mem(&contents.into_bytes());
+        let mut file = File::open(filepath).unwrap();
+        let mut contents = Vec::new();
+
+        file.read_to_end(&mut contents).unwrap();
+        let mut mem = Cpu::init_mem(contents);
         Cpu::init_font(&mut mem);
         
         Cpu {
@@ -95,14 +108,14 @@ impl Cpu {
         }
     }
     
-    fn init_mem(bytes: &[::BYTE]) -> [::BYTE; 0xFFF] {
+    fn init_mem(bytes: Vec<u8>) -> [::BYTE; 0xFFF] {
         let mut mem = [0; 0xFFF];
-        let bytes = &bytes[..0xFFF];
+        let len = bytes.len();
         
         { 
             let (_left, right) = mem.split_at_mut(0x200);
-            right.clone_from_slice(&bytes[..0xFFF]);
-        }
+            right[..len].clone_from_slice(&bytes[..len]);
+        } 
 
         mem
     }
@@ -152,14 +165,24 @@ impl Cpu {
     }
     
     ///
-    /// run - Read the contents of game memory, run and decode opcode instructions.
+    /// run - Read the contents of game memory, fetch, decode, execute opcode instructions.
     ///
-    fn run(&mut self) {
+    pub fn run(&mut self) {
+        let mut window: PistonWindow = 
+            WindowSettings::new("rust-chip8", SCREEN_DIM)
+                .exit_on_esc(true)
+                .build()
+                .unwrap();
 
-        while true {
-
+        while let Some(event) = window.next() {
+            window.draw_2d(&event, |context, graphics| {
+                clear([1.0; 4], graphics);
+                rectangle([1.0, 0.0, 0.0, 1.0],
+                          [0.0, 0.0, 100.0, 100.0],
+                          context.transform,
+                          graphics);
+            });
         }
-
     }
     
     ///
