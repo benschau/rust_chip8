@@ -16,6 +16,7 @@ use piston::event_loop::*;
 use piston::input::*;
 use glutin_window::GlutinWindow as Window;
 use opengl_graphics::{GlGraphics, OpenGL};
+use std::path::Path;
 
 pub struct App {
     gl: GlGraphics,
@@ -55,14 +56,15 @@ impl App {
 fn main() {
     let yaml = load_yaml!("../res/config.yml");
     let matches = clap::App::from_yaml(yaml).get_matches();
-    let test_file = "../res/games/breakout.ch8";
+    let test_file = Path::new("../res/games/breakout.ch8");
+    let display = test_file.display();
 
     // TODO: do things with matches/yaml
     
     // TODO: filepath should be optional; otherwise, we should just
     // open up a empty window with a menu bar at the top.
     let mut cpu = match cpu::Cpu::new(test_file) {
-        Err(why) => panic!("Couldn't read {}.", test_file),
+        Err(why) => panic!("Couldn't read {}.", display),
         Ok(cpu) => cpu,
     };
     // cpu.run();

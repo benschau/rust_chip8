@@ -7,6 +7,7 @@ use std::io::prelude::*;
 use cpu::rand::prelude::*;
 use font::FONT;
 use self::piston_window::*;
+use std::path::Path;
 
 const DELAY_FREQ: ::BYTE = 60;
 const SOUND_FREQ: ::BYTE = 60;
@@ -48,7 +49,7 @@ impl Default for Cpu {
 }
 
 impl Cpu {
-    pub fn new(filepath: &str) -> Result<Cpu, CpuError> {
+    pub fn new(filepath: &Path) -> Result<Cpu, CpuError> {
         // TODO: add better exception handling
         let mut file = match File::open(filepath) {
             Err(why) => return Err(CpuError::IncorrectFilePath),
