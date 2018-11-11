@@ -2,7 +2,6 @@ extern crate rand;
 extern crate piston_window;
 
 use std::vec::Vec;
-use std::fs::metadata;
 use std::fs::File;
 use std::io::prelude::*;
 use cpu::rand::prelude::*;
@@ -13,7 +12,7 @@ const DELAY_FREQ: ::BYTE = 60;
 const SOUND_FREQ: ::BYTE = 60;
 // screen_scaling here means that every 'pixel' is screen_scaling x screen_scaling size.
 const SCREEN_SCALING: u32 = 10;
-const SCREEN_DIM: (u32, u32) = (32 * SCREEN_SCALING, 64 * SCREEN_SCALING);
+const SCREEN_DIM: (u32, u32) = (64 * SCREEN_SCALING, 32 * SCREEN_SCALING);
 
 // our screen frame buffer
 static mut SCREEN: [[::BYTE; SCREEN_DIM.0 as usize]; SCREEN_DIM.1 as usize] = 
@@ -23,55 +22,17 @@ static mut KEYBOARD: [bool; 16] = [false; 16];
 static mut DELAY_TIMER: ::BYTE = DELAY_FREQ;
 static mut SOUND_TIMER: ::BYTE = SOUND_FREQ;
 
-/* 
-struct OpcodeByte<'a> {
-    curr_opcode: ::WORD,
-    func: Option<&'a FnMut(&mut Cpu, ::WORD)>,
-    suffix_bits: Vec<OpcodeByte<'a>>
-}
-
-impl<'a> OpcodeByte<'a> {
-
-    ///
-    /// new - create a new opcode bit structure.
-    ///
-    /// The opcode byte structure is meant to keep track of the current decoded opcode. 
-    /// We split the opcode down at the index given, such that given the word and index: 
-    ///     0xDXYN, 1
-    /// is split so that curr_opcode = D, and the suffix_bits are set to the possible bits for the
-    /// next opcode, e.g X, or nothing if the only choice is DXYN (which it is). Since DXYN is the
-    /// leaf in our tree, we point func toward Cpu::opcode_dxyn() for the decoder tree.
-    ///     0xDXYN, 2 => curr_opcode = DX, suffix_bits = 
-    ///
-    fn new(opcode: ::WORD, 
-           index: ::BYTE, 
-           cpu_fp: Option<&'a FnMut(&mut Cpu, ::WORD)>) -> OpcodeByte<'a> {
-       
-        let curr = opcode >> ((4 - index) * 4);
-        let suffix = opcode & 256;
-        
-        // TODO: Shift curr_opcode and suffix bits to create vector of opcode bytes and root
-        // need unit test, just a guess 
-        let mut bits: Vec<OpcodeByte> = Vec::new();
-        while suffix != 0 {
-            bits.push(OpcodeByte::new(curr, index + 1, cpu_fp));
-            suffix << 4;
-        }
-
-        OpcodeByte {
-            curr_opcode: curr,
-            func: cpu_fp,
-            suffix_bits: bits
-        }
-    }
-} */
-
 pub struct Cpu {
     game_mem: [::BYTE; 0xFFF],
     regs: [::BYTE; 16],
     addr_reg: ::WORD,
     pc: ::WORD,
     m_stack: Vec<::WORD>,
+}
+
+pub enum CpuError {
+    IncorrectFilePath,
+    UnReadableFile,
 }
 
 impl Default for Cpu {
@@ -87,25 +48,26 @@ impl Default for Cpu {
 }
 
 impl Cpu {
-    pub fn new(filepath: &str) -> Cpu {
-        // TODO: add exception handling on this file 
-        let metadata = metadata(filepath).unwrap();
-        assert!(metadata.is_file());
+    pub fn new(filepath: &str) -> Result<Cpu, CpuError> {
+        // TODO: add better exception handling
+        let mut file = match File::open(filepath) {
+            Err(why) => return Err(CpuError::IncorrectFilePath),
+            Ok(file) => file,
+        };
 
-        let mut file = File::open(filepath).unwrap();
-        let mut contents = Vec::new();
+        let mut contents: Vec<u8> = Vec::new();
 
-        file.read_to_end(&mut contents).unwrap();
+        file.read_to_end(&mut contents);
         let mut mem = Cpu::init_mem(contents);
         Cpu::init_font(&mut mem);
         
-        Cpu {
+        Ok(Cpu {
             game_mem: mem,
             regs: [0; 16],
             addr_reg: 0,
             pc: 0x200,
             m_stack: Vec::new(),
-        }
+        })
     }
     
     fn init_mem(bytes: Vec<u8>) -> [::BYTE; 0xFFF] {
@@ -120,41 +82,6 @@ impl Cpu {
         mem
     }
     
-    /*
-    ///
-    /// init_decoder - Creates the following structure for later opcode decomp:
-    /// 
-    /// The first array of pointers is points either to another array (if there are more
-    /// possibilities) or to the actual function that the opcode represents. We traverse this
-    /// structure to the bottom, like a tree, and the leaf is the interpreted CPU opcode that is run. 
-    /// 
-    /// Each subarray of pointers is representative of the next bit needed to be interpreted,
-    /// or the next distinctive bit- e.g for the opcodes that begin with 8, we can skip the
-    /// next two bits XY and we base the final opcode on the last bit (that we use to
-    /// differentiate against the other opcodes that begin with 8).
-    ///
-    ///     [ 0, 1NNN, 2NNN, 3XNN, 4XNN, 5XY0, 6XNN, 7XNN, 8, 9XY0, ANNN, BNNN, CXNN, DXYN, ...
-    ///       |                                            |                                
-    ///      / \                                    [8XY0, 8XY1, ...]                   
-    ///   [ E , 0NNN ]
-    ///     |   
-    ///     |   
-    ///     |__
-    ///    /    \
-    ///  [00E0, 00EE]
-    ///
-    ///     [ E,                F ]
-    ///       |                 | 
-    ///     [EX(9E), EX(A1)]   [FX(07), FX(0A), FX(15), FX(18), FX(1E), FX(29), FX(33), FX(55),
-    ///                         FX(65)]
-    ///
-    fn init_decoder() -> [::BYTE; 16] {
-        let arr: [::BYTE; 16] = [0; 16];
-
-        arr
-    } 
-    */
-   
     ///
     /// init_font - load chip8 fontset into the game_mem[0x50] onward.
     ///
@@ -174,6 +101,7 @@ impl Cpu {
                 .build()
                 .unwrap();
 
+        // TODO: Add a menu bar at the top 
         while let Some(event) = window.next() {
             window.draw_2d(&event, |context, graphics| {
                 clear([1.0; 4], graphics);
@@ -197,16 +125,12 @@ impl Cpu {
         opcode
     }
     
-    /*
     ///
     /// decode_opcode - decode the given opcode using the following structure:
     ///
-    /// This structure should already have been created prior to the calling of this function.
-    ///
     fn decode_opcode(optcode: ::WORD) {
-              
+    
     }
-    */
     
     ///
     /// 0NNN - call RCA 1802 program at address NNN
