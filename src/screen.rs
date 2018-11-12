@@ -9,12 +9,48 @@ use piston::input::*;
 use glutin_window::GlutinWindow as Window;
 use opengl_graphics::{GlGraphics, OpenGL};
 
+// Change this to OpenGL::V2_1 if not working.
+const OPENGL_VERSION: OpenGL = OpenGL::V3_2;
+
 pub struct App {
+    pub window: Window,
     pub gl: GlGraphics,
     pub rotation: f64
 }
 
+pub struct GraphicsConfig {
+    pub name: String,
+    pub dim: (u32, u32),
+}
+
+impl GraphicsConfig {
+    pub fn new(name: &str, dim: (u32, u32)) -> GraphicsConfig {
+        GraphicsConfig {
+            name: String::from(name),
+            dim: dim
+        }
+    }
+}
+
 impl App {
+    pub fn new(conf: GraphicsConfig) -> App {
+        // Create an Glutin window.
+        let mut window: Window = WindowSettings::new(
+                conf.name,
+                conf.dim
+            )
+            .opengl(OPENGL_VERSION)
+            .exit_on_esc(true)
+            .build()
+            .unwrap();
+
+        App { 
+            window: window,
+            gl: GlGraphics::new(OPENGL_VERSION),
+            rotation: 0.0
+        }    
+    }
+
     pub fn render(&mut self, args: &RenderArgs) {
         use graphics::*;
 
