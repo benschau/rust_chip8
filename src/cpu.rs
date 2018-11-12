@@ -33,6 +33,7 @@ pub struct Cpu {
 pub enum CpuError {
     IncorrectFilePath,
     UnreadableFile,
+    EndOfMemory,
 }
 
 impl Default for Cpu {
@@ -96,23 +97,33 @@ impl Cpu {
     
     ///
     /// run - Read the contents of game memory, fetch, decode, execute opcode instructions.
+    ///       Our chip8 interpreter.
     ///
     pub fn run(&mut self) {
-        for i in self.pc..0x1000 {
-            println!("mem: {}", self.game_mem[i as usize]);
+        loop {
+            let opcode = match self.get_opcode() {
+                Err(why) => break,
+                Ok(opcode) => opcode
+            };
+
+            println!("opcode: {:x}", opcode);    
         }
     }
     
     ///
     /// get_opcode - fetch the opcode that the pc is looking at.
     ///
-    fn get_opcode(&mut self) -> ::WORD {
+    fn get_opcode(&mut self) -> Result<::WORD, CpuError> {
+        if self.pc >= 0x1000 {
+            return Err(CpuError::EndOfMemory);
+        }
+
         let mut opcode = self.game_mem[self.pc as usize] as ::WORD;
         opcode <<= 8; 
         opcode |= self.game_mem[(self.pc + 1) as usize] as ::WORD;
         self.pc += 2;
         
-        opcode
+        Ok(opcode)
     }
     
     ///
