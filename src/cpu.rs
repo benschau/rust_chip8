@@ -6,14 +6,13 @@ use std::fs::File;
 use std::io::prelude::*;
 use cpu::rand::prelude::*;
 use font::FONT;
-use self::piston_window::*;
 use std::path::Path;
 
 const DELAY_FREQ: ::BYTE = 60;
 const SOUND_FREQ: ::BYTE = 60;
 // screen_scaling here means that every 'pixel' is screen_scaling x screen_scaling size.
 const SCREEN_SCALING: u32 = 10;
-const SCREEN_DIM: (u32, u32) = (64 * SCREEN_SCALING, 32 * SCREEN_SCALING);
+pub const SCREEN_DIM: (u32, u32) = (64 * SCREEN_SCALING, 32 * SCREEN_SCALING);
 
 // our screen frame buffer
 static mut SCREEN: [[::BYTE; SCREEN_DIM.0 as usize]; SCREEN_DIM.1 as usize] = 
@@ -24,7 +23,7 @@ static mut DELAY_TIMER: ::BYTE = DELAY_FREQ;
 static mut SOUND_TIMER: ::BYTE = SOUND_FREQ;
 
 pub struct Cpu {
-    game_mem: [::BYTE; 0xFFF],
+    game_mem: [::BYTE; 0x1000],
     regs: [::BYTE; 16],
     addr_reg: ::WORD,
     pc: ::WORD,
@@ -33,13 +32,13 @@ pub struct Cpu {
 
 pub enum CpuError {
     IncorrectFilePath,
-    UnReadableFile,
+    UnreadableFile,
 }
 
 impl Default for Cpu {
     fn default() -> Self {
         Cpu {
-            game_mem: [0; 0xFFF],
+            game_mem: [0; 0x1000],
             regs: [0; 16],
             addr_reg: 0,
             pc: 0x200,
@@ -57,8 +56,11 @@ impl Cpu {
         };
 
         let mut contents: Vec<u8> = Vec::new();
+        match file.read_to_end(&mut contents) {
+            Err(why) => return Err(CpuError::UnreadableFile),
+            Ok(_)    => {  },
+        }
 
-        file.read_to_end(&mut contents);
         let mut mem = Cpu::init_mem(contents);
         Cpu::init_font(&mut mem);
         
@@ -71,8 +73,8 @@ impl Cpu {
         })
     }
     
-    fn init_mem(bytes: Vec<u8>) -> [::BYTE; 0xFFF] {
-        let mut mem = [0; 0xFFF];
+    fn init_mem(bytes: Vec<u8>) -> [::BYTE; 0x1000] {
+        let mut mem = [0; 0x1000];
         let len = bytes.len();
         
         { 
@@ -96,21 +98,8 @@ impl Cpu {
     /// run - Read the contents of game memory, fetch, decode, execute opcode instructions.
     ///
     pub fn run(&mut self) {
-        let mut window: PistonWindow = 
-            WindowSettings::new("rust-chip8", SCREEN_DIM)
-                .exit_on_esc(true)
-                .build()
-                .unwrap();
-
-        // TODO: Add a menu bar at the top 
-        while let Some(event) = window.next() {
-            window.draw_2d(&event, |context, graphics| {
-                clear([1.0; 4], graphics);
-                rectangle([1.0, 0.0, 0.0, 1.0],
-                          [0.0, 0.0, 100.0, 100.0],
-                          context.transform,
-                          graphics);
-            });
+        for i in self.pc..0x1000 {
+            println!("mem: {}", self.game_mem[i as usize]);
         }
     }
     
