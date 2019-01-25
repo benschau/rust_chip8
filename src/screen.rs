@@ -51,13 +51,23 @@ impl App {
         }    
     }
 
+    pub fn input(&mut self, button: &Button) {
+        if let Button::Keyboard(key) = *button {
+            /* // use this here for mapping to keyboard data in Cpu.rs
+            match key {
+                Key::Up => self.
+            
+            } */
+        }
+    }
+
     pub fn render(&mut self, args: &RenderArgs) {
         use graphics::*;
 
         const GREEN: [f32; 4] = [0.0, 1.0, 0.0, 1.0];
         const RED:   [f32; 4] = [1.0, 0.0, 0.0, 1.0];
 
-        let square = rectangle::square(0.0, 0.0, 50.0);
+        let square = rectangle::square(0.0, 0.0, 5.0);
         let rotation = self.rotation;
         let (x, y) = ((args.width / 2) as f64,
                       (args.height / 2) as f64);

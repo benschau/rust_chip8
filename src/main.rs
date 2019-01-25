@@ -19,8 +19,13 @@ use piston::input::*;
 use glutin_window::GlutinWindow as Window;
 use opengl_graphics::{GlGraphics, OpenGL};
 use std::path::Path;
+use std::path::PathBuf;
 
 fn main() {
+    // Get project directory path to locate project resources consistently:
+    let mut dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    dir.push("res/");
+    
     let yaml = load_yaml!("../res/config.yml");
     let matches = clap::App::from_yaml(yaml).get_matches();
     // TODO: do things with matches/yaml
