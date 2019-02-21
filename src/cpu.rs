@@ -34,6 +34,7 @@ pub enum CpuError {
     IncorrectFilePath,
     UnreadableFile,
     EndOfMemory,
+    InvalidOpcode,
 }
 
 impl Default for Cpu {
@@ -111,7 +112,9 @@ impl Cpu {
     }
     
     ///
-    /// get_opcode - fetch the opcode that the pc is looking at.
+    /// get_opcode - fetch the opcode that the pc is looking at, 
+    /// 
+    ///     NOTE: also increments PC by half word every time it is called.
     ///
     fn get_opcode(&mut self) -> Result<::WORD, CpuError> {
         if self.pc >= 0x1000 {
@@ -127,10 +130,96 @@ impl Cpu {
     }
     
     ///
-    /// decode_opcode - decode the given opcode using the following structure:
+    /// decode_opcode - decode & execute the opcode using the following structure:
     ///
-    fn decode_opcode(optcode: ::WORD) {
-    
+    /// TODO: Could be better optimized; see git://decoder_experiment
+    ///
+    fn decode_opcode(&mut self, opcode: ::WORD) -> Result<(), CpuError> {
+        let query_half_byte = |index: u16| -> u16 { (opcode & (0xF << index)) >> (index * 4) };
+        
+        match query_half_byte(3) {
+            0x0 => {
+                if query_half_byte(1) == 0xE {
+                    if query_half_byte(0) == 0xE {
+                        self.opcode_00ee(opcode);
+                    } else {
+                        self.opcode_00e0(opcode); 
+                    }
+                } else {
+                    self.opcode_0nnn(opcode); 
+                }
+            },
+            0x1 => self.opcode_1nnn(opcode),
+            0x2 => self.opcode_2nnn(opcode),
+            0x3 => self.opcode_3xnn(opcode),
+            0x4 => self.opcode_4xnn(opcode),
+            0x5 => self.opcode_5xy0(opcode),
+            0x6 => self.opcode_6xnn(opcode),
+            0x7 => self.opcode_7xnn(opcode),
+            0x8 => {
+               //TODO: Finish this.
+               let index = query_half_byte(0);
+
+               if index == 0x0 {
+                   return Err(CpuError::InvalidOpcode);
+               }
+            },
+            0x9 => self.opcode_9xy0(opcode),
+            0xA => self.opcode_annn(opcode),
+            0xB => self.opcode_bnnn(opcode),
+            0xC => self.opcode_cxnn(opcode),
+            0xD => self.opcode_dxyn(opcode),
+            0xE => {
+                let half_byte_zero = query_half_byte(0);
+                let half_byte_one = query_half_byte(1);
+
+                if half_byte_zero == 0x1 && half_byte_one == 0xA {
+                    self.opcode_ex9e(opcode);
+                } else if half_byte_zero == 0xE && half_byte_one == 0x9 {
+                    self.opcode_exa1(opcode);
+                } else {
+                    return Err(CpuError::InvalidOpcode);
+                }
+            },
+            0xF => {
+                let half_byte_zero = query_half_byte(0);
+                let half_byte_one = query_half_byte(1);
+                
+                if half_byte_one == 0x0 {
+                    if half_byte_zero == 0x7 {
+                        self.opcode_fx07(opcode); 
+                    } else if half_byte_zero == 0xA {
+                        self.opcode_fx0a(opcode);
+                    } else {
+                        return Err(CpuError::InvalidOpcode);
+                    }
+                } else if half_byte_one == 0x1 {
+                    if half_byte_zero == 0x5 {
+                        self.opcode_fx15(opcode);
+                    } else if half_byte_zero == 0x8 {
+                        self.opcode_fx18(opcode);
+                    } else if half_byte_zero == 0xE {
+                        self.opcode_fx1e(opcode);
+                    } else {
+                        return Err(CpuError::InvalidOpcode);
+                    }
+                } else if half_byte_one == 0x2 {
+                    self.opcode_fx29(opcode);
+                } else if half_byte_one == 0x3 {
+                    self.opcode_fx33(opcode);
+                } else if half_byte_one == 0x5 {
+                    self.opcode_fx55(opcode);
+                } else if half_byte_one == 0x6 {
+                    self.opcode_fx65(opcode);
+                } else {
+                    return Err(CpuError::InvalidOpcode);
+                }
+
+            },
+            _ => return Err(CpuError::InvalidOpcode),
+        };
+
+        Ok(())
     }
     
     ///
