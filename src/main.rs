@@ -32,7 +32,7 @@ fn main() {
 
     // TODO: filepath should be optional; otherwise, we should just
     // open up a empty window with a menu bar at the top.
-    let test_file = Path::new("../res/games/breakout.ch8");
+    let test_file = Path::new("res/games/breakout.ch8");
     let display = test_file.display();
     let mut cpu = match cpu::Cpu::new(test_file) {
         Err(why) => panic!("Couldn't successfully initialize CPU with \"{}\".", display),
