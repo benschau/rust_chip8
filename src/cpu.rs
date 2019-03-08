@@ -157,11 +157,19 @@ impl Cpu {
             0x6 => self.opcode_6xnn(opcode),
             0x7 => self.opcode_7xnn(opcode),
             0x8 => {
-               //TODO: Finish this.
                let index = query_half_byte(0);
 
-               if index == 0x0 {
-                   return Err(CpuError::InvalidOpcode);
+               match index {
+                   0x0 => self.opcode_8xy0(opcode);
+                   0x1 => self.opcode_8xy1(opcode);
+                   0x2 => self.opcode_8xy2(opcode);
+                   0x3 => self.opcode_8xy3(opcode);
+                   0x4 => self.opcode_8xy4(opcode);
+                   0x5 => self.opcode_8xy5(opcode);
+                   0x6 => self.opcode_8xy6(opcode);
+                   0x7 => self.opcode_8xy7(opcode);
+                   0xE => self.opcode_8xye(opcode);
+                     _ => return Err(CpuError::InvalidOpcode); 
                }
             },
             0x9 => self.opcode_9xy0(opcode),
