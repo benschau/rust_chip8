@@ -15,10 +15,9 @@ const SCREEN_SCALING: u32 = 10;
 pub const SCREEN_DIM: (u32, u32) = (64 * SCREEN_SCALING, 32 * SCREEN_SCALING);
 
 // our screen frame buffer
-static mut SCREEN: [[::BYTE; SCREEN_DIM.0 as usize]; SCREEN_DIM.1 as usize] = 
-                   [[0; SCREEN_DIM.0 as usize]; SCREEN_DIM.1 as usize];
-
-static mut KEYBOARD: [bool; 16] = [false; 16];
+//static mut SCREEN: [[::BYTE; SCREEN_DIM.0 as usize]; SCREEN_DIM.1 as usize] = 
+//                   [[0; SCREEN_DIM.0 as usize]; SCREEN_DIM.1 as usize];
+//static mut KEYBOARD: [bool; 16] = [false; 16];
 static mut DELAY_TIMER: ::BYTE = DELAY_FREQ;
 static mut SOUND_TIMER: ::BYTE = SOUND_FREQ;
 
@@ -28,6 +27,12 @@ pub struct Cpu {
     addr_reg: ::WORD,
     pc: ::WORD,
     m_stack: Vec<::WORD>,
+    
+    // defines the screen per the Cpu view //
+    screen: [[::BYTE; SCREEN_DIM.0 as usize]; SCREEN_DIM.1 as usize],
+
+    // defines the keyboard per the Cpu view //
+    keyboard: [bool; 16],
 }
 
 pub enum CpuError {
@@ -45,6 +50,8 @@ impl Default for Cpu {
             addr_reg: 0,
             pc: 0x200,
             m_stack: Vec::new(),
+            screen: [[0; SCREEN_DIM.0 as usize]; SCREEN_DIM.1 as usize],
+            keyboard: [false; 16],
         }
     }
 }
@@ -72,6 +79,8 @@ impl Cpu {
             addr_reg: 0,
             pc: 0x200,
             m_stack: Vec::new(),
+            screen: [[0; SCREEN_DIM.0 as usize]; SCREEN_DIM.1 as usize],
+            keyboard: [false; 16],
         })
     }
     
@@ -484,11 +493,11 @@ impl Cpu {
                     if (data & mask) == 1 {
                         let x: usize = (coord.0 + xpixel) as usize;
                         let y: usize = (coord.1 + line as ::BYTE) as usize;
-                        if SCREEN[x][y] == 1 {
+                        if self.screen[x][y] == 1 {
                             self.regs[0xF] = 1; 
                         }
 
-                        SCREEN[x][y] ^= 1;
+                        self.screen[x][y] ^= 1;
                     }
                 }
             }
@@ -502,7 +511,7 @@ impl Cpu {
         let key = self.regs[((opcode >> 8) & 0x0F) as usize] as usize;
         
         unsafe {
-            if KEYBOARD[key] {
+            if self.keyboard[key] {
                 self.pc += 1; 
             }
         }
@@ -515,7 +524,7 @@ impl Cpu {
         let key = self.regs[((opcode >> 8) & 0x0F) as usize] as usize;
         
         unsafe {
-            if !KEYBOARD[key] {
+            if !self.keyboard[key] {
                 self.pc += 1; 
             }
         }

@@ -39,7 +39,7 @@ fn main() {
         Ok(cpu) => cpu,
     };
 
-    cpu.run();
+    //cpu.run();
 
     let mut app = screen::App::new(GraphicsConfig::new("rust-chip8", cpu::SCREEN_DIM));
 
