@@ -111,19 +111,27 @@ impl Cpu {
     ///
     pub fn run(&mut self) {
         loop {
+            println!("------------------");
+            println!("pc: {:x}", self.pc);
             let opcode = match self.get_opcode() {
-                Err(why) => break,
+                Err(why) => 0xFFFF as ::WORD,
                 Ok(opcode) => opcode
             };
 
-            println!("opcode: {:x}", opcode);    
+            match self.decode_opcode(opcode) {
+                Err(why) => println!("ERR"),
+                Ok(()) => println!("opcode {:x}", opcode)
+            }
+
+            // TODO impl step through per keyboard press, for debugging purposes
+
         }
     }
     
     ///
     /// get_opcode - fetch the opcode that the pc is looking at, 
     /// 
-    ///     NOTE: also increments PC by half word every time it is called.
+    ///     note: also increments pc by half word every time it is called.
     ///
     fn get_opcode(&mut self) -> Result<::WORD, CpuError> {
         if self.pc >= 0x1000 {
@@ -131,8 +139,10 @@ impl Cpu {
         }
 
         let mut opcode = self.game_mem[self.pc as usize] as ::WORD;
+        println!("first byte: {:x}", opcode);
         opcode <<= 8; 
         opcode |= self.game_mem[(self.pc + 1) as usize] as ::WORD;
+        println!("second byte: {:x}", opcode);
         self.pc += 2;
         
         Ok(opcode)
@@ -144,7 +154,16 @@ impl Cpu {
     /// TODO: Could be better optimized; see git://decoder_experiment
     ///
     fn decode_opcode(&mut self, opcode: ::WORD) -> Result<(), CpuError> {
-        let query_half_byte = |index: u16| -> u16 { (opcode & (0xF << index)) >> (index * 4) };
+        let query_half_byte = |index: u16| -> u16 { (opcode & (0xF << index * 4)) >> index * 4 };
+        
+        let sample0 = query_half_byte(0);
+        let sample1 = query_half_byte(1);
+        let sample2 = query_half_byte(2);
+        let sample3 = query_half_byte(3);
+        println!("query_half_byte(0): {:x}", sample0);
+        println!("query_half_byte(1): {:x}", sample1);
+        println!("query_half_byte(2): {:x}", sample2);
+        println!("query_half_byte(3): {:x}", sample3);
         
         match query_half_byte(3) {
             0x0 => {
@@ -319,6 +338,7 @@ impl Cpu {
         let val = (opcode & 0x00FF) as ::BYTE;
 
         self.regs[regx_loc] = val; 
+        println!("V{} <= {}", regx_loc, self.regs[regx_loc]);
     }
 
     ///
@@ -329,6 +349,7 @@ impl Cpu {
         let val = (opcode & 0x00FF) as ::BYTE;
         
         self.regs[regx_loc] = self.regs[regx_loc] + val;
+        println!("V{} <= {}", regx_loc, self.regs[regx_loc]);
     }
     
     // TODO: Compress 8xy series into one function

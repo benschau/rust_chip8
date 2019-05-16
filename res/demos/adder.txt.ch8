@@ -1,0 +1,6 @@
+# adder.sch8 - demo program that adds 1 to a register until == 10.
+6100 		# set V1 <- 0 0x200
+7101		# V1 += 1 
+310A		# if (V1 == 0xA) 
+1204		# loop back to addition (0x204)
+120A 		# otherwise, loop infinitely
