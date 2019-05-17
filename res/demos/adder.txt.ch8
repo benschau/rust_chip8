@@ -2,5 +2,5 @@
 6100 		# set V1 <- 0 0x200
 7101		# V1 += 1 
 310A		# if (V1 == 0xA) 
-1204		# loop back to addition (0x204)
-120A 		# otherwise, loop infinitely
+1202		# loop back to addition (0x202)
+1208		# loop here infinitely (0x208)
