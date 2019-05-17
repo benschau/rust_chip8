@@ -5,9 +5,15 @@ very simple binary dump script to form a readable ch8 file.
 """
 
 import struct
+import argparse
 
 if __name__ == "__main__":
-    with open("adder.txt.ch8", "r") as f:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("input_file", help="input file with chip8 hexadecimal opcodes")
+    parser.add_argument("output_file", help="output file to dump chip8 binary code into")
+    args = parser.parse_args()
+
+    with open(args.input_file, "r") as f:
         lines = f.readlines()
     
     wordlist = []
@@ -22,7 +28,7 @@ if __name__ == "__main__":
             wordlist.append(word)
     
     print(wordlist)
-    with open("adder.ch8", "wb") as f:
+    with open(args.output_file, "wb") as f:
         buff = bytearray(len(wordlist) * 2) 
         
         offset = 0
@@ -31,4 +37,4 @@ if __name__ == "__main__":
             offset += 2
 
         f.write(buff)
-        print("Wrote {} to adder.ch8".format(buff))
+        print("Wrote {} to {}".format(buff, args.output_file))
